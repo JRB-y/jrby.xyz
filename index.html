@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + Vue</title>
+    <style>
+        #dotsCanvas {
+            width: 100%;
+            position: fixed;
+            z-index: -1;
+        }
+    </style>
+  </head>
+  <body>
+    <canvas id="dotsCanvas"></canvas>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+    <script>
+        const canvas = document.getElementById('dotsCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        function randomColor() {
+            const baseColor = { r: 0x1f, g: 0x9a, b: 0x50 };
+
+            const randomOffset = () => Math.floor(Math.random() * 46) - 16;
+            const clamp = (value) => Math.max(0, Math.min(255, value));
+
+            const r = clamp(baseColor.r + randomOffset());
+            const g = clamp(baseColor.g + randomOffset());
+            const b = clamp(baseColor.b + randomOffset());
+
+            return `rgba(${r}, ${g}, ${b}, `;
+        }
+
+        class Gradient {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.radius = Math.random() * 200 + 50;
+                this.vx = (Math.random() - 0.5) * 1;
+                this.vy = (Math.random() - 0.5) * 0.1;
+                this.vr = (Math.random() - 0.5) * 0.001;
+                this.vo = 0.001;
+                this.color = randomColor();
+                this.opacity = 0;
+                this.fadeIn = true;
+            }
+
+            draw() {
+                ctx.beginPath();
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+                gradient.addColorStop(0, `${this.color}${this.opacity})`);
+                gradient.addColorStop(1, `${this.color}0)`);
+                ctx.fillStyle = gradient;
+                ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.radius += this.vr;
+
+                if (this.fadeIn) {
+                    this.opacity += this.vo ;
+                    if (this.opacity >= 0.1) {
+                        this.fadeIn = false;
+                    }
+                } else {
+                    this.opacity -= this.vo;
+                    if (this.opacity <= 0) {
+                        this.opacity = 0;
+                        this.fadeIn = true;
+                    }
+                }
+
+                if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
+                    this.vx = -this.vx;
+                }
+                if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
+                    this.vy = -this.vy;
+                }
+
+                if (this.radius < 20 || this.radius > 100) {
+                    this.vr = -this.vr;
+                }
+            }
+        }
+
+        const gradients = [];
+        for (let i = 0; i < 10; i++) {
+            gradients.push(new Gradient());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            gradients.forEach((gradient) => {
+                gradient.draw();
+                gradient.update();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+
+    </script>
+  </body>
+</html>
